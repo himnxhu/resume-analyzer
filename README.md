@@ -5,6 +5,7 @@
 A Resume Analyzer is an AI-based application that analyzes resumes and provides insights such as skill extraction, ATS compatibility, and suggestions for improvement. The system helps candidates optimize their resumes to increase their chances of getting shortlisted by recruiters.
 
 ⚙️ How It Works
+
 User uploads a resume (PDF or DOCX).
 The system extracts text from the resume.
 NLP techniques analyze the text.
@@ -19,6 +20,7 @@ Missing Skills
 Suggestions for improvement
 
 🧠 Technologies Used
+
 Python
 Streamlit / Flask (for web interface)
 Natural Language Processing (NLP)
@@ -29,6 +31,7 @@ Scikit-learn
 TF-IDF / Cosine Similarity
 
 🔑 Key Features
+
 Resume PDF text extraction
 Skill extraction using NLP
 ATS compatibility score
@@ -59,12 +62,19 @@ Improve formatting for ATS systems
 
 resume-analyzer/
 │
+
 ├── app.py
+
 ├── resume_parser.py
+
 ├── skill_extractor.py
+
 ├── model.py
+
 ├── requirements.txt
+
 ├── dataset/
+
 └── templates/
 
 
@@ -81,6 +91,7 @@ Real-world problem solving
 Recruiters like projects that solve real problems, and resume optimization is something many candidates need.
 
 🚀 Future Improvements
+
 AI-based resume scoring using BERT
 Job recommendation system
 LinkedIn profile analyzer
@@ -115,6 +126,7 @@ An AI-powered Resume Analyzer that evaluates resumes and provides insights such 
 ✔ Simple and interactive web interface
 
 🧠 How It Works
+
 User uploads their resume (PDF).
 The system extracts text content from the resume.
 NLP techniques analyze the text.
@@ -124,6 +136,7 @@ The system generates:
 ATS Score
 Missing Skills
 Resume Improvement Suggestions
+
 🛠 Tech Stack
 
 Programming Language
@@ -146,18 +159,30 @@ Cosine Similarity
 ATS Optimization
 
 📂 Project Structure
+
 resume-analyzer
+
 │
+
 ├── app.py
+
 ├── resume_parser.py
+
 ├── skill_extractor.py
+
 ├── model.py
+
 ├── requirements.txt
+
 ├── dataset
+
 │
+
 └── README.md
 
+
 ⚙️ Installation
+
 1️⃣ Clone the repository
 git clone https://github.com/himnxhu/resume-analyzer.git
 
@@ -193,6 +218,7 @@ Include more technical keywords
 Improve resume formatting
 
 🎯 Future Improvements
+
 AI-based resume scoring using BERT
 Job recommendation system
 LinkedIn profile analysis
