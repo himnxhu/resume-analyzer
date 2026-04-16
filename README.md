@@ -1,4 +1,5 @@
 📄 Resume Analyzer Project
+
 🔹 Project Overview
 
 A Resume Analyzer is an AI-based application that analyzes resumes and provides insights such as skill extraction, ATS compatibility, and suggestions for improvement. The system helps candidates optimize their resumes to increase their chances of getting shortlisted by recruiters.
@@ -16,6 +17,7 @@ It generates:
 ATS Score
 Missing Skills
 Suggestions for improvement
+
 🧠 Technologies Used
 Python
 Streamlit / Flask (for web interface)
@@ -25,6 +27,7 @@ PDF parsing (PyPDF2 / pdfplumber)
 Machine Learning (optional)
 Scikit-learn
 TF-IDF / Cosine Similarity
+
 🔑 Key Features
 Resume PDF text extraction
 Skill extraction using NLP
@@ -32,6 +35,8 @@ ATS compatibility score
 Keyword matching with job description
 Suggestions to improve resume
 Simple web interface
+
+
 📊 Example Output
 
 The system might generate results like:
@@ -49,7 +54,9 @@ Suggestions:
 Add measurable achievements
 Include more technical keywords
 Improve formatting for ATS systems
+
 📁 Project Structure
+
 resume-analyzer/
 │
 ├── app.py
@@ -59,6 +66,8 @@ resume-analyzer/
 ├── requirements.txt
 ├── dataset/
 └── templates/
+
+
 💡 Why This Project Is Valuable
 
 This project demonstrates:
@@ -118,11 +127,8 @@ Resume Improvement Suggestions
 🛠 Tech Stack
 
 Programming Language
-
 Python
-
 Libraries
-
 Streamlit
 spaCy
 NLTK
@@ -138,6 +144,7 @@ Keyword Extraction
 TF-IDF
 Cosine Similarity
 ATS Optimization
+
 📂 Project Structure
 resume-analyzer
 │
@@ -149,15 +156,20 @@ resume-analyzer
 ├── dataset
 │
 └── README.md
+
 ⚙️ Installation
 1️⃣ Clone the repository
 git clone https://github.com/himnxhu/resume-analyzer.git
+
 2️⃣ Navigate to project folder
 cd resume-analyzer
+
 3️⃣ Install dependencies
 pip install -r requirements.txt
+
 4️⃣ Run the application
 streamlit run app.py
+
 📊 Example Output
 
 ATS Score: 75%
@@ -179,6 +191,7 @@ Suggestions
 Add measurable achievements
 Include more technical keywords
 Improve resume formatting
+
 🎯 Future Improvements
 AI-based resume scoring using BERT
 Job recommendation system
