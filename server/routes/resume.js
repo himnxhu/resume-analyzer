@@ -1,23 +1,38 @@
 import express from "express";
 import multer from "multer";
-import fs from "fs";
-import { createRequire } from "module";
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
+import { PDFParse } from "pdf-parse";
 import analyzeResume from "../utils/analyzeResume.js";
 
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse").default;
-
 const router = express.Router();
-const upload = multer({ dest: "uploads/" });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadDir = path.join(__dirname, "..", "uploads");
+const upload = multer({ dest: uploadDir });
 
 router.post("/upload", upload.single("resume"), async (req, res) => {
+  let parser;
+
   try {
+    if (!req.file) {
+      return res.status(400).json({
+        error: "Please upload a PDF resume file."
+      });
+    }
 
-    const dataBuffer = fs.readFileSync(req.file.path);
+    const dataBuffer = await fs.readFile(req.file.path);
 
-    const pdfData = await pdfParse(dataBuffer);
+    parser = new PDFParse({ data: dataBuffer });
+    const pdfData = await parser.getText();
 
-    const resumeText = pdfData.text;
+    const resumeText = pdfData.text?.trim();
+
+    if (!resumeText) {
+      return res.status(400).json({
+        error: "Could not read text from this PDF. Try a text-based PDF resume."
+      });
+    }
 
     const analysis = await analyzeResume(resumeText);
 
@@ -33,6 +48,11 @@ router.post("/upload", upload.single("resume"), async (req, res) => {
       error: err.message
     });
 
+  } finally {
+    await Promise.allSettled([
+      parser?.destroy(),
+      req.file ? fs.rm(req.file.path, { force: true }) : Promise.resolve()
+    ]);
   }
 });
 

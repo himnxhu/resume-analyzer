@@ -1,11 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-
 async function analyzeResume(resumeText){
+    if (!process.env.GEMINI_API_KEY) {
+        throw new Error("GEMINI_API_KEY is not set. Set it before starting the server.")
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash"
+        model: process.env.GEMINI_MODEL || "gemini-2.5-flash"
     })
 
     const prompt = `
