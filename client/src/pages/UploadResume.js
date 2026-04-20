@@ -23,8 +23,10 @@ function UploadResume() {
       const formData = new FormData()
       formData.append("resume", file)
 
+      const apiBaseUrl = process.env.REACT_APP_API_URL || ""
+
       const res = await axios.post(
-        "http://localhost:5000/upload",
+        `${apiBaseUrl}/upload`,
         formData
       )
 
