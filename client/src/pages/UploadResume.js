@@ -1,6 +1,21 @@
 import axios from "axios";
 import { useState } from "react";
 
+function getUploadErrorMessage(err) {
+  const message = err.response?.data?.error || err.message || "Upload failed."
+  const lowerMessage = message.toLowerCase()
+
+  if (
+    lowerMessage.includes("googlegenerativeai error") ||
+    lowerMessage.includes("service unavailable") ||
+    lowerMessage.includes("high demand")
+  ) {
+    return "The AI service is temporarily busy. Please try again in a minute."
+  }
+
+  return message
+}
+
 function UploadResume() {
 
   const [file,setFile] = useState(null)
@@ -32,7 +47,7 @@ function UploadResume() {
 
       setResult(res.data.analysis)
     } catch (err) {
-      setError(err.response?.data?.error || err.message || "Upload failed.")
+      setError(getUploadErrorMessage(err))
     } finally {
       setLoading(false)
     }

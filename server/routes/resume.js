@@ -44,7 +44,7 @@ router.post("/upload", upload.single("resume"), async (req, res) => {
 
     console.error("Resume analysis error:", err);
 
-    res.status(500).json({
+    res.status(err.status || 500).json({
       error: err.message
     });
 
