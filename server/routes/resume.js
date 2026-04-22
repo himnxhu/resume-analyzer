@@ -9,6 +9,7 @@ import analyzeResume from "../utils/analyzeResume.js";
 const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.join(__dirname, "..", "uploads");
+await fs.mkdir(uploadDir, { recursive: true });
 const upload = multer({ dest: uploadDir });
 
 router.post("/upload", upload.single("resume"), async (req, res) => {
