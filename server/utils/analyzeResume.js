@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
 const DEFAULT_MODEL = "gemini-2.5-flash"
-const DEFAULT_FALLBACK_MODELS = ["gemini-2.5-flash"]
+const DEFAULT_FALLBACK_MODELS = ["gemini-2.5-flash-lite"]
 const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504])
 
 function sleep(ms) {
