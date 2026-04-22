@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
-const DEFAULT_MODEL = "gemini-1.5-flash"
-const DEFAULT_FALLBACK_MODELS = ["gemini-2.0-flash"]
+const DEFAULT_MODEL = "gemini-2.5-flash"
+const DEFAULT_FALLBACK_MODELS = ["gemini-2.5-flash"]
 const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504])
 
 function sleep(ms) {
@@ -35,6 +35,12 @@ function isRetryableError(error) {
 
 function createUserFacingError(error) {
     const status = getErrorStatus(error)
+
+    if (status === 429) {
+        const quotaError = new Error("The Gemini API rate limit or quota was reached. Check your API key quota/billing in Google AI Studio, then try again.")
+        quotaError.status = 429
+        return quotaError
+    }
 
     if (isRetryableError(error)) {
         const friendlyError = new Error("The AI service is temporarily busy. Please try again in a minute.")
