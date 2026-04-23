@@ -2,25 +2,15 @@ import axios from "axios";
 import { useMemo, useRef, useState } from "react";
 import "./UploadResume.css";
 
-const demoAnalysis = `ATS Score: 84/100
-Keyword Match: 80%
-
-Skills Found
-- Python
-- SQL
-- Machine Learning
-- Data Analysis
-- Git
-
-Missing Keywords
-- Deep Learning
-- TensorFlow
-- Statistics
-
-AI Suggestions
-- Add quantified achievements to your project bullets.
-- Improve the resume summary with a target role.
-- Include measurable impact for internships and projects.`;
+const emptyReport = {
+  score: 0,
+  match: 0,
+  skills: [],
+  missing: [],
+  suggestions: [],
+  sections: [],
+  raw: "",
+};
 
 function getUploadErrorMessage(err) {
   const message = err.response?.data?.error || err.message || "Upload failed.";
@@ -39,50 +29,65 @@ function getUploadErrorMessage(err) {
 
 function parseAnalysis(analysis) {
   const text = analysis || "";
+
+  if (!text.trim()) {
+    return emptyReport;
+  }
+
   const scoreMatch = text.match(/(?:ATS\s*)?Score\s*:?\s*(\d{1,3})(?:\s*\/\s*100|\s*%)?/i);
   const keywordMatch = text.match(/Keyword\s*Match\s*:?\s*(\d{1,3})\s*%?/i);
-  const score = Math.min(Number(scoreMatch?.[1]) || 84, 100);
-  const match = Math.min(Number(keywordMatch?.[1]) || 80, 100);
+  const score = Math.min(Number(scoreMatch?.[1]) || 0, 100);
+  const match = Math.min(Number(keywordMatch?.[1]) || 0, 100);
 
   return {
     score,
     match,
-    skills: extractList(text, "Skills Found", [
-      "Python",
-      "SQL",
-      "Machine Learning",
-      "Data Analysis",
-      "Git",
-    ]),
-    missing: extractList(text, "Missing Keywords", [
-      "Deep Learning",
-      "TensorFlow",
-      "Statistics",
-    ]),
-    suggestions: extractList(text, "AI Suggestions", [
-      "Add quantified achievements",
-      "Improve resume summary",
-      "Include measurable impact",
-    ]),
+    skills: extractList(text, "Skills Found"),
+    missing: extractList(text, "Missing Keywords"),
+    suggestions: extractList(text, "AI Suggestions"),
+    sections: extractSections(text),
     raw: text,
   };
 }
 
-function extractList(text, heading, fallback) {
+function extractList(text, heading) {
   const pattern = new RegExp(`${heading}\\s*\\n([\\s\\S]*?)(?:\\n\\s*\\n|$)`, "i");
   const section = text.match(pattern)?.[1];
 
   if (!section) {
-    return fallback;
+    return [];
   }
 
-  const items = section
+  return section
     .split("\n")
-    .map((line) => line.replace(/^[-*•\d.)\s]+/, "").trim())
+    .map((line) => line.replace(/^[-*+\d.)\s]+/, "").trim())
     .filter(Boolean)
     .slice(0, 6);
+}
 
-  return items.length ? items : fallback;
+function extractSections(text) {
+  const blocks = text
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
+  return blocks.slice(0, 6).map((block, index) => {
+    const lines = block
+      .split("\n")
+      .map((line) => line.replace(/^[-*+\d.)\s]+/, "").trim())
+      .filter(Boolean);
+    const firstLine = lines[0] || `Insight ${index + 1}`;
+    const hasHeading = firstLine.length <= 42 && lines.length > 1;
+
+    return {
+      title: hasHeading ? firstLine.replace(/:$/, "") : `Insight ${index + 1}`,
+      points: hasHeading ? lines.slice(1, 4) : lines.slice(0, 3),
+    };
+  });
+}
+
+function EmptyState({ label = "Null" }) {
+  return <span className="empty-state">{label}</span>;
 }
 
 function UploadResume() {
@@ -92,7 +97,8 @@ function UploadResume() {
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
-  const report = useMemo(() => parseAnalysis(result || demoAnalysis), [result]);
+  const report = useMemo(() => parseAnalysis(result), [result]);
+  const hasResult = Boolean(result.trim());
 
   const selectFile = (selectedFile) => {
     setError("");
@@ -134,20 +140,16 @@ function UploadResume() {
   return (
     <main className="resume-app">
       <nav className="navbar">
-        <a className="brand" href="#top" aria-label="AI Resume Analyzer home">
-          <span className="brand-mark">AI</span>
+        <a className="text-logo" href="#top" aria-label="AI Resume Analyzer home">
           AI Resume Analyzer
         </a>
         <div className="nav-links" aria-label="Primary navigation">
           <a href="#features">Features</a>
           <a href="#how-it-works">How it Works</a>
-          <a href="https://github.com" target="_blank" rel="noreferrer">
+          <a href="https://github.com/himnxhu/resume-analyzer" target="_blank" rel="noreferrer">
             GitHub
           </a>
         </div>
-        <a className="nav-cta" href="#upload">
-          Analyze Resume
-        </a>
       </nav>
 
       <section className="hero section-shell" id="top">
@@ -162,16 +164,13 @@ function UploadResume() {
             <a className="primary-button" href="#upload">
               Upload Resume
             </a>
-            <button className="secondary-button" type="button" onClick={() => setResult(demoAnalysis)}>
-              Try Demo
-            </button>
           </div>
         </div>
 
         <aside className="preview-card" aria-label="Resume analysis preview">
           <div className="preview-header">
             <span>Resume Analysis Preview</span>
-            <span className="live-pill">Live</span>
+            <span className="live-pill">Preview</span>
           </div>
           <div className="score-preview">
             <div className="score-ring" style={{ "--score": 84 }}>
@@ -229,7 +228,7 @@ function UploadResume() {
             onChange={(event) => selectFile(event.target.files[0])}
           />
           <div className="upload-icon" aria-hidden="true">
-            ↑
+            ^
           </div>
           <h3>Drag & Drop Resume Here</h3>
           <p>or click to upload</p>
@@ -260,7 +259,7 @@ function UploadResume() {
               "Comparing Job Keywords",
               "Generating Suggestions",
             ].map((step) => (
-              <span key={step}>✓ {step}</span>
+              <span key={step}>Done: {step}</span>
             ))}
           </div>
           <div className="processing-bar">
@@ -272,7 +271,7 @@ function UploadResume() {
       <section className="results section-shell" id="how-it-works">
         <div className="section-heading">
           <span className="eyebrow">Resume Analysis Report</span>
-          <h2>{result ? "Your AI Resume Report" : "Results Dashboard Preview"}</h2>
+          <h2>Your AI Resume Report</h2>
         </div>
 
         <div className="dashboard-grid">
@@ -281,7 +280,7 @@ function UploadResume() {
               <span>{report.score}</span>
             </div>
             <h3>ATS Score</h3>
-            <p>{report.score >= 80 ? "Good Resume" : "Needs Improvement"}</p>
+            <p>{hasResult ? (report.score >= 80 ? "Good Resume" : "Needs Improvement") : "Upload required"}</p>
           </article>
 
           <article className="glass-card">
@@ -297,36 +296,54 @@ function UploadResume() {
           <article className="glass-card">
             <h3>Skills Found</h3>
             <div className="tag-list success">
-              {report.skills.map((skill) => (
-                <span key={skill}>{skill}</span>
-              ))}
+              {report.skills.length ? report.skills.map((skill) => <span key={skill}>{skill}</span>) : <EmptyState />}
             </div>
           </article>
 
           <article className="glass-card">
             <h3>Missing Keywords</h3>
             <div className="tag-list warning">
-              {report.missing.map((keyword) => (
-                <span key={keyword}>{keyword}</span>
-              ))}
+              {report.missing.length ? (
+                report.missing.map((keyword) => <span key={keyword}>{keyword}</span>)
+              ) : (
+                <EmptyState />
+              )}
             </div>
           </article>
 
           <article className="glass-card suggestions-card">
             <h3>AI Suggestions</h3>
-            <ul>
-              {report.suggestions.map((suggestion) => (
-                <li key={suggestion}>{suggestion}</li>
-              ))}
-            </ul>
+            {report.suggestions.length ? (
+              <ul>
+                {report.suggestions.map((suggestion) => (
+                  <li key={suggestion}>{suggestion}</li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState label="Null - upload and analyze your resume to generate suggestions" />
+            )}
           </article>
         </div>
 
-        {result && (
-          <details className="raw-analysis glass-card">
-            <summary>Full AI analysis</summary>
-            <pre>{report.raw}</pre>
-          </details>
+        {hasResult && (
+          <section className="analysis-panel">
+            <div className="section-heading compact">
+              <span className="eyebrow">Full Analysis</span>
+              <h2>Detailed AI Breakdown</h2>
+            </div>
+            <div className="analysis-grid">
+              {report.sections.map((section) => (
+                <article className="analysis-card" key={section.title}>
+                  <h3>{section.title}</h3>
+                  <ul>
+                    {section.points.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </section>
         )}
       </section>
 
@@ -336,9 +353,9 @@ function UploadResume() {
           <h2>Built for fast, practical resume feedback.</h2>
         </div>
         <div className="trust-grid">
-          <span>✓ ATS optimized analysis</span>
-          <span>✓ Instant resume feedback</span>
-          <span>✓ Designed for students & developers</span>
+          <span>ATS optimized analysis</span>
+          <span>Instant resume feedback</span>
+          <span>Designed for students & developers</span>
           <strong>1000+ resumes analyzed</strong>
         </div>
       </section>
@@ -346,11 +363,11 @@ function UploadResume() {
       <footer className="footer">
         <strong>AI Resume Analyzer</strong>
         <div>
-          <a href="https://github.com" target="_blank" rel="noreferrer">
+          <a href="https://github.com/himnxhu/resume-analyzer" target="_blank" rel="noreferrer">
             GitHub
           </a>
           <a href="#top">Privacy</a>
-          <a href="#upload">Contact</a>
+          <a href="mailto:upadhyayhimanshu842@gmail.com">Contact</a>
         </div>
       </footer>
     </main>
