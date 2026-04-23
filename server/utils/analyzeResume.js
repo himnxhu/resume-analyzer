@@ -59,11 +59,25 @@ async function analyzeResume(resumeText){
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
     const prompt = `
-Analyze this resume and give:
+Analyze this resume for ATS readiness and return only valid JSON. Do not include markdown, code fences, or extra text.
 
-1. ATS score out of 100
-2. Missing skills
-3. Resume improvement suggestions
+Use this exact shape:
+{
+  "atsScore": 0,
+  "keywordMatch": 0,
+  "skillsFound": [],
+  "missingKeywords": [],
+  "suggestions": [],
+  "summary": []
+}
+
+Rules:
+- atsScore must be a number from 0 to 100.
+- keywordMatch must be a number from 0 to 100.
+- skillsFound must include skills, tools, technologies, and role-relevant keywords found in the resume.
+- missingKeywords must include important missing skills or ATS keywords for the resume profile.
+- suggestions must include practical improvements based on this exact resume.
+- summary must include 3 to 5 short detailed insights.
 
 Resume:
 ${resumeText}

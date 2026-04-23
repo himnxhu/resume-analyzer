@@ -34,35 +34,124 @@ function parseAnalysis(analysis) {
     return emptyReport;
   }
 
+  const jsonReport = parseJsonReport(text);
+
+  if (jsonReport) {
+    return jsonReport;
+  }
+
   const scoreMatch = text.match(/(?:ATS\s*)?Score\s*:?\s*(\d{1,3})(?:\s*\/\s*100|\s*%)?/i);
-  const keywordMatch = text.match(/Keyword\s*Match\s*:?\s*(\d{1,3})\s*%?/i);
+  const keywordMatch = text.match(/(?:Keyword\s*Match|Match\s*Score|ATS\s*Keyword\s*Match)\s*:?\s*(\d{1,3})\s*%?/i);
   const score = Math.min(Number(scoreMatch?.[1]) || 0, 100);
   const match = Math.min(Number(keywordMatch?.[1]) || 0, 100);
 
   return {
     score,
     match,
-    skills: extractList(text, "Skills Found"),
-    missing: extractList(text, "Missing Keywords"),
-    suggestions: extractList(text, "AI Suggestions"),
+    skills: extractList(text, ["Skills Found", "Extracted Skills", "Skills", "Key Skills", "Technical Skills"]),
+    missing: extractList(text, ["Missing Keywords", "Missing Skills", "Missing ATS Keywords", "Skills to Add"]),
+    suggestions: extractList(text, ["AI Suggestions", "Suggestions", "Resume Improvement Suggestions", "Improvements"]),
     sections: extractSections(text),
     raw: text,
   };
 }
 
-function extractList(text, heading) {
-  const pattern = new RegExp(`${heading}\\s*\\n([\\s\\S]*?)(?:\\n\\s*\\n|$)`, "i");
-  const section = text.match(pattern)?.[1];
+function parseJsonReport(text) {
+  try {
+    const cleanedText = text
+      .replace(/^```(?:json)?/i, "")
+      .replace(/```$/i, "")
+      .trim();
+    const jsonStart = cleanedText.indexOf("{");
+    const jsonEnd = cleanedText.lastIndexOf("}");
 
-  if (!section) {
-    return [];
+    if (jsonStart === -1 || jsonEnd === -1) {
+      return null;
+    }
+
+    const data = JSON.parse(cleanedText.slice(jsonStart, jsonEnd + 1));
+    const skills = normalizeList(data.skillsFound || data.skills || data.keySkills);
+    const missing = normalizeList(data.missingKeywords || data.missingSkills || data.keywordsToAdd);
+    const suggestions = normalizeList(data.suggestions || data.aiSuggestions || data.improvements);
+    const summary = normalizeList(data.summary || data.insights || data.fullAnalysis);
+
+    return {
+      score: clampScore(data.atsScore || data.score),
+      match: clampScore(data.keywordMatch || data.keywordMatchScore),
+      skills,
+      missing,
+      suggestions,
+      sections: buildSectionsFromJson({ skills, missing, suggestions, summary }),
+      raw: text,
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function buildSectionsFromJson({ skills, missing, suggestions, summary }) {
+  return [
+    {
+      title: "Resume Summary",
+      points: summary.length ? summary.slice(0, 4) : ["Analysis completed for the uploaded resume."],
+    },
+    {
+      title: "Skills Found",
+      points: skills.length ? skills.slice(0, 4) : ["No explicit skills were detected."],
+    },
+    {
+      title: "Missing Keywords",
+      points: missing.length ? missing.slice(0, 4) : ["No major missing keywords were detected."],
+    },
+    {
+      title: "AI Suggestions",
+      points: suggestions.length ? suggestions.slice(0, 4) : ["No suggestions were returned."],
+    },
+  ];
+}
+
+function clampScore(value) {
+  return Math.min(Math.max(Number(value) || 0, 0), 100);
+}
+
+function normalizeList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean).slice(0, 8);
   }
 
-  return section
-    .split("\n")
-    .map((line) => line.replace(/^[-*+\d.)\s]+/, "").trim())
-    .filter(Boolean)
-    .slice(0, 6);
+  if (typeof value === "string") {
+    return value
+      .split(/\n|,/)
+      .map((item) => item.replace(/^[-*+\d.)\s]+/, "").trim())
+      .filter(Boolean)
+      .slice(0, 8);
+  }
+
+  return [];
+}
+
+function extractList(text, headings) {
+  for (const heading of headings) {
+    const pattern = new RegExp(
+      `(?:^|\\n)\\s*(?:#+\\s*)?(?:\\*\\*)?${heading}(?:\\*\\*)?\\s*:?\\s*\\n([\\s\\S]*?)(?=\\n\\s*(?:#+\\s*)?(?:\\*\\*)?[A-Z][A-Za-z\\s]*(?:\\*\\*)?\\s*:?\\s*\\n|\\n\\s*\\n\\s*\\n|$)`,
+      "i"
+    );
+    const section = text.match(pattern)?.[1];
+
+    if (section) {
+      const items = section
+        .split("\n")
+        .map((line) => line.replace(/^[-*+\d.)\s]+/, "").replace(/\*\*/g, "").trim())
+        .filter(Boolean)
+        .slice(0, 8);
+
+      if (items.length) {
+        return items;
+      }
+    }
+  }
+
+  return [];
 }
 
 function extractSections(text) {
